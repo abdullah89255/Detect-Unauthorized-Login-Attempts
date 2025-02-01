@@ -295,5 +295,110 @@ Now, the script will **run automatically** and block attackers!
 
 ---
 
-## **🔥 Need More Security Features?**
-Let me know **what security automation** you need! 🚀😊
+# **Windows 10**
+
+### 1. **Enable Windows Security Features**
+
+#### **A. Enable Account Lockout Policy**
+Windows has a built-in account lockout policy that can help protect against brute-force attacks by locking the account after a set number of failed login attempts.
+
+1. **Open Local Security Policy**:
+   - Press `Win + R`, type `secpol.msc`, and press Enter.
+
+2. **Navigate to Account Lockout Policy**:
+   - In the Local Security Policy window, expand **Account Policies** and click on **Account Lockout Policy**.
+
+3. **Configure the Lockout Policy**:
+   - **Account lockout duration**: Set the duration for how long the account will remain locked (e.g., 15 or 30 minutes).
+   - **Account lockout threshold**: Set the number of failed login attempts before locking the account (e.g., 3 to 5 attempts).
+   - **Reset account lockout counter after**: Set a time limit (e.g., 15 or 30 minutes) for when the counter will reset, allowing a fresh set of login attempts.
+
+4. **Apply the Policy**:
+   - Once you set these policies, click **Apply** and **OK**.
+
+#### **B. Enable Windows Firewall Protection**
+Ensure that the Windows Firewall is enabled and configured to block suspicious activity.
+
+1. Open **Control Panel**, go to **System and Security**, and click **Windows Defender Firewall**.
+2. Ensure **Windows Firewall** is turned on for all networks (Private, Public, and Domain).
+
+---
+
+### 2. **Use Event Viewer to Monitor Login Attempts**
+
+You can monitor suspicious login attempts using **Event Viewer**, and based on the logs, take action (e.g., alerting or banning IPs manually).
+
+1. **Open Event Viewer**:
+   - Press `Win + R`, type `eventvwr.msc`, and press Enter.
+
+2. **Navigate to Security Logs**:
+   - In the Event Viewer, expand **Windows Logs** > **Security**.
+
+3. **Monitor Event IDs for Failed Logins**:
+   - Look for Event IDs related to failed login attempts:
+     - **Event ID 4625**: Failed logon attempts.
+     - **Event ID 4740**: Account lockout.
+
+4. **Create a Custom View (Optional)**:
+   - You can create a **Custom View** to filter only failed login attempts and alerts. To do so, in Event Viewer, right-click **Custom Views** > **Create Custom View** and set filters for Event IDs 4625 and 4740.
+
+---
+
+### 3. **Use Windows Defender to Block Malicious IPs**
+
+If you are using **Windows Defender Antivirus**, it can help to block malicious IP addresses by configuring the **Windows Firewall** to automatically block repeated failed login attempts.
+
+1. **Access Windows Firewall**:
+   - Open **Control Panel** > **System and Security** > **Windows Defender Firewall**.
+
+2. **Advanced Settings**:
+   - On the left side, click **Advanced settings** to open the **Windows Firewall with Advanced Security**.
+   - Under **Inbound Rules**, create a new rule to block specific IP addresses or ranges that are making repeated failed login attempts.
+
+---
+
+### 4. **Implement Third-Party Tools for Auto-Banning**
+
+For automated and more advanced protection, you can use third-party tools that offer brute-force protection and automatic IP blocking for repeated failed login attempts. Some popular tools are:
+
+#### **A. Fail2Ban (via Cygwin)**
+While originally designed for Linux, **Fail2Ban** can be installed on Windows via Cygwin (a Linux-like environment for Windows). It monitors log files and can automatically ban IPs that show signs of brute-force attempts.
+
+1. Install **Cygwin** (to simulate a Linux environment on Windows).
+2. Set up **Fail2Ban** in Cygwin to monitor the **Security Event Log** and ban IPs with too many failed login attempts.
+
+#### **B. RdpGuard (for RDP attacks)**
+If you use **Remote Desktop Protocol (RDP)**, **RdpGuard** can help monitor and automatically block IPs that make too many failed RDP login attempts.
+
+1. Install **RdpGuard** from their [official website](https://rdpguard.com/).
+2. Configure the tool to detect repeated RDP login failures and automatically block the offending IPs.
+
+---
+
+### 5. **Configure Group Policies for Extra Protection**
+You can further configure Group Policy to tighten security and limit login attempts.
+
+1. **Open Group Policy Editor**:
+   - Press `Win + R`, type `gpedit.msc`, and press Enter.
+
+2. **Configure User Rights Assignment**:
+   - Go to **Computer Configuration** > **Windows Settings** > **Security Settings** > **Local Policies** > **User Rights Assignment**.
+   - Make sure only authorized users have **Log on locally** and **Log on through Remote Desktop Services** rights.
+
+3. **Audit Failed Logins**:
+   - You can enable auditing for logon attempts. Go to **Security Settings** > **Advanced Audit Policy Configuration** > **Logon/Logoff** > Enable **Logon/Logoff** auditing.
+
+---
+
+### 6. **Consider Using Remote Desktop Security Tools (if applicable)**
+If you're using **RDP**, make sure you're using advanced security features, such as:
+
+- **Network Level Authentication (NLA)**: Ensures users are authenticated before a session is established.
+- **RDP Gateway**: Acts as a middle layer to handle RDP traffic securely.
+- **Limit IP ranges**: Only allow specific IP addresses to connect via RDP.
+
+---
+
+### Conclusion
+
+By combining Windows' built-in security features, auditing logs, and third-party tools, you can detect and block unauthorized login attempts on your Windows 10 system. Implementing automated actions (e.g., account lockouts and IP bans) based on failed login attempts will help protect your computer from brute-force and other unauthorized access attempts.
