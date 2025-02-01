@@ -150,5 +150,150 @@ sudo systemctl restart fail2ban
 
 ---
 
-## **🔥 Want More Custom Security Scripts?**  
-Let me know **what security feature** you need! 🚀😊
+# **🔍 Detect and Auto-Ban Attackers for Unauthorized Login Attempts in Windows**  
+
+In Windows, failed login attempts are logged in the **Event Viewer**, and we can use **PowerShell** to detect and block suspicious IPs automatically.
+
+---
+
+## **📌 1️⃣ View Failed Login Attempts in Windows**  
+You can manually check failed login attempts in **Event Viewer**:  
+1. Open **Event Viewer** (`eventvwr.msc`)  
+2. Go to:  
+   ```
+   Windows Logs → Security → Event ID 4625 (Failed Logon)
+   ```
+3. Look for **Source Network Address** (IP) of the failed attempts.
+
+---
+
+## **📌 2️⃣ Detect Unauthorized Login Attempts using PowerShell**  
+This script scans **Event Logs**, extracts failed login attempts, and lists attacking IPs.
+
+```powershell
+# Get the last 100 failed login attempts
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} -MaxEvents 100 | 
+ForEach-Object {
+    $Ip = ($_ | Select-String -Pattern 'Source Network Address:\s(\S+)').Matches.Groups[1].Value
+    if ($Ip) { $Ip }
+} | Group-Object | Sort-Object Count -Descending
+```
+✅ **Usage**:  
+- Run this script in **PowerShell (Admin)**  
+- It lists **failed login attempts** grouped by IP.
+
+---
+
+## **📌 3️⃣ Auto-Ban Attackers with Windows Firewall**  
+This script:  
+✅ **Scans Windows Event Logs** for **failed logins** (Event ID 4625)  
+✅ **Blocks IPs** with more than `5` failed attempts  
+
+```powershell
+# Set failed login threshold
+$Threshold = 5
+
+# Get the last 200 failed login attempts
+$FailedLogins = Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} -MaxEvents 200 | 
+    ForEach-Object {
+        if ($_.Message -match "Source Network Address:\s(\S+)") {
+            $matches[1]
+        }
+    } | Group-Object | Where-Object {$_.Count -ge $Threshold} | Sort-Object Count -Descending
+
+# Block IPs with too many failed attempts
+foreach ($entry in $FailedLogins) {
+    $IP = $entry.Name
+    Write-Host "🚨 Blocking IP: $IP (Failed Logins: $($entry.Count))"
+
+    # Add firewall rule to block the IP
+    New-NetFirewallRule -DisplayName "Block_IP_$IP" -Direction Inbound -Action Block -RemoteAddress $IP
+}
+
+Write-Host "✅ Done! All suspicious IPs are blocked."
+```
+✅ **Usage**:  
+- Run this script in **PowerShell (Admin)**  
+- It **automatically bans suspicious IPs**  
+
+---
+
+## **📌 4️⃣ Auto Monitor & Block Attackers in Real-Time**  
+This script **monitors login attempts in real-time** and **blocks attackers instantly**.
+
+```powershell
+# Set threshold for failed attempts
+$Threshold = 3
+
+# Monitor Security Logs in real-time
+Write-Host "📡 Monitoring failed logins..."
+$Watcher = New-Object System.Management.EventArrivedEventArgs
+$Query = "SELECT * FROM __InstanceCreationEvent WITHIN 5 WHERE TargetInstance ISA 'Win32_NTLogEvent' AND TargetInstance.EventCode = '4625'"
+
+# Create Event Watcher
+$EventWatcher = New-Object System.Management.ManagementEventWatcher -ArgumentList "root\CIMV2", $Query
+$EventWatcher.EventArrived += {
+    $Event = $_.NewEvent.TargetInstance
+    if ($Event.Message -match "Source Network Address:\s(\S+)") {
+        $IP = $matches[1]
+
+        # Count failed attempts
+        $Count = (Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} | 
+            Where-Object { $_.Message -match "Source Network Address:\s$IP" }).Count
+
+        Write-Host "🚨 Detected Failed Login from $IP (Count: $Count)"
+
+        if ($Count -ge $Threshold) {
+            Write-Host "🚫 Blocking IP: $IP"
+            New-NetFirewallRule -DisplayName "Block_IP_$IP" -Direction Inbound -Action Block -RemoteAddress $IP
+        }
+    }
+}
+
+$EventWatcher.Start()
+```
+✅ **Usage**:  
+- Run **PowerShell as Administrator**  
+- Run `./real_time_ban.ps1`  
+- **Blocks IPs in real-time** after 3 failed attempts  
+
+---
+
+## **📌 5️⃣ Unblock an IP (If Needed)**  
+If an IP was mistakenly blocked, use this command to **remove the firewall rule**:  
+
+```powershell
+Remove-NetFirewallRule -DisplayName "Block_IP_192.168.1.100"
+```
+✅ Replace `192.168.1.100` with the blocked IP.
+
+---
+
+## **📌 6️⃣ Automate with Task Scheduler**
+To run the script **automatically every 5 minutes**, you can use **Task Scheduler**:  
+
+1️⃣ Open **Task Scheduler** (`taskschd.msc`)  
+2️⃣ Click **Create Basic Task** → Name it **Auto-Ban Failed Logins**  
+3️⃣ Set **Trigger** → **Daily** or **Every 5 minutes**  
+4️⃣ Set **Action** → **Start a Program**  
+5️⃣ Program:  
+   ```
+   powershell.exe -ExecutionPolicy Bypass -File "C:\path\to\script.ps1"
+   ```
+6️⃣ Click **Finish**  
+
+Now, the script will **run automatically** and block attackers!
+
+---
+
+## **🚀 Summary**
+✅ `detect_failed_logins.ps1` → **Lists failed login attempts**  
+✅ `auto_ban.ps1` → **Automatically blocks attackers**  
+✅ `real_time_ban.ps1` → **Real-time monitoring & auto-ban**  
+✅ `unblock_ip.ps1` → **Unblocks a blocked IP**  
+✅ **Task Scheduler** → **Runs the script automatically**  
+
+---
+
+## **🔥 Need More Security Features?**
+Let me know **what security automation** you need! 🚀😊
